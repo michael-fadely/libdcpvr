@@ -16,6 +16,21 @@ PVRReader::PVRReader(const std::string& path)
 	PVRReader::check();
 }
 
+PVRReader::PVRReader(PVRReader&& other) noexcept
+	: IPVRTexture(other), FileReader<PVR_ERROR>(std::move(other))
+{
+	gbix_pos       = other.gbix_pos;
+	pvrt_pos       = other.pvrt_pos;
+	data_pos       = other.data_pos;
+	has_alpha      = other.has_alpha;
+	is_twiddled    = other.is_twiddled;
+	has_mipmaps    = other.has_mipmaps;
+	is_vq          = other.is_vq;
+	is_rect        = other.is_rect;
+	code_book_size = other.code_book_size;
+	palette_depth  = other.palette_depth;
+}
+
 PVRReader::PVRReader(std::ifstream& stream, size_t size, bool owner)
 	: IPVRTexture(), FileReader<PVR_ERROR>(stream, size, owner)
 {
@@ -68,9 +83,9 @@ void PVRReader::write(std::ofstream& file)
 {
 	char buffer[4096] {};
 
-	stream.seekg(_start);
+	stream.seekg(start_);
 
-	const auto end = _start + _size;
+	const auto end = start_ + size_;
 
 	pos_t pos;
 	while (!stream.eof() && (pos = stream.tellg()) < end)
@@ -287,11 +302,11 @@ void PVRReader::check()
 
 	if (result != PVR_OK)
 	{
-		_error = result;
+		error_ = result;
 		close();
 	}
 	else
 	{
-		_is_open = true;
+		is_open_ = true;
 	}
 }

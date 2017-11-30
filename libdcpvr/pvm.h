@@ -46,13 +46,13 @@ struct IPVMArchive
 	PVMEntry* entries;
 };
 
-// TODO: move constructor
 class PVMReader : public IPVMArchive, public FileReader<PVMError>
 {
-	std::vector<PVMEntry> _entries;
+	std::vector<PVMEntry> entries_;
 
 public:
 	explicit PVMReader(const std::string& path);
+	PVMReader(PVMReader&& other) noexcept;
 	PVMReader(std::ifstream& stream, size_t size, bool owner = false);
 	~PVMReader();
 

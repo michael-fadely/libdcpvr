@@ -67,7 +67,6 @@ struct IPVRTexture
 	uint16_t height;
 };
 
-// TODO: move constructor
 class PVRReader : public IPVRTexture, public FileReader<PVR_ERROR>
 {
 	pos_t gbix_pos;
@@ -85,6 +84,7 @@ class PVRReader : public IPVRTexture, public FileReader<PVR_ERROR>
 
 public:
 	explicit PVRReader(const std::string& path);
+	PVRReader(PVRReader&& other) noexcept;
 	PVRReader(std::ifstream& stream, size_t size, bool owner = false);
 	~PVRReader();
 

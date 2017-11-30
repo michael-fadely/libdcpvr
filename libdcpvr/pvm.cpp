@@ -19,15 +19,25 @@ static constexpr uint32_t MAX_GBIX   = 0xFFFFFFEF;
 static constexpr uint32_t PVM_FOURCC = 'HMVP';
 
 PVMReader::PVMReader(const std::string& path)
-	: IPVMArchive(), FileReader<PVMError>(path)
+	: IPVMArchive(),
+	  FileReader<PVMError>(path)
 {
 	header  = {};
 	entries = nullptr;
 	PVMReader::check();
 }
 
+PVMReader::PVMReader(PVMReader&& other) noexcept
+	: IPVMArchive(other),
+	  FileReader<PVMError>(std::move(other))
+{
+	entries_ = move(other.entries_);
+	entries  = entries_.data();
+}
+
 PVMReader::PVMReader(std::ifstream& stream, size_t size, bool owner)
-	: IPVMArchive(), FileReader<PVMError>(stream, size, owner)
+	: IPVMArchive(),
+	  FileReader<PVMError>(stream, size, owner)
 {
 	header  = {};
 	entries = nullptr;
@@ -90,17 +100,17 @@ PVMError PVMReader::get_header()
 			break;
 		}
 
-		_entries.push_back(entry);
+		entries_.push_back(entry);
 	}
 
 	stream.seekg(0);
 
-	if (_entries.size() != header.entry_count)
+	if (entries_.size() != header.entry_count)
 	{
 		return PVM_EARLY_EOF;
 	}
 
-	entries = _entries.data();
+	entries = entries_.data();
 	return PVM_OK;
 }
 
@@ -110,22 +120,22 @@ void PVMReader::check()
 
 	if (result != PVM_OK)
 	{
-		_error = result;
+		error_ = result;
 		close();
 	}
 	else
 	{
-		_is_open = true;
+		is_open_ = true;
 	}
 }
 
 void PVMReader::close()
 {
 	FileReader<PVMError>::close();
-	_entries.clear();
+	entries_.clear();
 }
 
 const std::vector<PVMEntry>& PVMReader::get_entries() const
 {
-	return _entries;
+	return entries_;
 }
