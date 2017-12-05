@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <fstream>
+#include "FileReader.h"
 
 // TODO: exceptions instead
 enum PVR_ERROR
@@ -24,7 +25,7 @@ enum PVR_DECODE
 };
 
 // PVR Pixel Formats
-enum PVR_PIXEL_FORMAT
+enum PVR_PIXEL_FORMAT : uint8_t
 {
 	PVR_PIXEL_FORMAT_ARGB1555 = 0x00,
 	PVR_PIXEL_FORMAT_RGB565   = 0x01,
@@ -36,7 +37,7 @@ enum PVR_PIXEL_FORMAT
 
 
 // Pvr Data Formats
-enum PVR_DATA_FORMAT
+enum PVR_DATA_FORMAT : uint8_t
 {
 	PVR_DATA_FORMAT_TWIDDLED           = 0x01,
 	PVR_DATA_FORMAT_TWIDDLED_MM        = 0x02,
@@ -54,17 +55,18 @@ enum PVR_DATA_FORMAT
 	PVR_DATA_FORMAT_BMP                = 0x0E,
 	PVR_DATA_FORMAT_BMP_MM             = 0x0F,
 	PVR_DATA_FORMAT_SMALLVQ            = 0x10,
-	PVR_DATA_FORMAT_SMALLVQ_MM         = 0x11
+	PVR_DATA_FORMAT_SMALLVQ_MM         = 0x11,
+	PVR_DATA_FORMAT_UNKNOWN            = 0xFF
 };
 
 struct IPVRTexture
 {
-	uint32_t gbix;
-	uint32_t data_size;
-	uint8_t  pixel_format;
-	uint8_t  data_format;
-	uint16_t width;
-	uint16_t height;
+	uint32_t         gbix         = 0;
+	uint32_t         data_size    = 0;
+	PVR_PIXEL_FORMAT pixel_format = PVR_PIXEL_FORMAT_UNKNOWN;
+	PVR_DATA_FORMAT  data_format  = PVR_DATA_FORMAT_UNKNOWN;
+	uint16_t         width        = 0;
+	uint16_t         height       = 0;
 };
 
 class PVRReader : public IPVRTexture, public FileReader<PVR_ERROR>

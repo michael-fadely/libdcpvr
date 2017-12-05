@@ -20,7 +20,7 @@ static constexpr uint32_t PVM_FOURCC = 'HMVP';
 
 PVMReader::PVMReader(const std::string& path)
 	: IPVMArchive(),
-	  FileReader<PVMError>(path)
+	  FileReader<PVM_ERROR>(path)
 {
 	header  = {};
 	entries = nullptr;
@@ -29,7 +29,7 @@ PVMReader::PVMReader(const std::string& path)
 
 PVMReader::PVMReader(PVMReader&& other) noexcept
 	: IPVMArchive(other),
-	  FileReader<PVMError>(std::move(other))
+	  FileReader<PVM_ERROR>(std::move(other))
 {
 	entries_ = move(other.entries_);
 	entries  = entries_.data();
@@ -37,7 +37,7 @@ PVMReader::PVMReader(PVMReader&& other) noexcept
 
 PVMReader::PVMReader(std::ifstream& stream, size_t size, bool owner)
 	: IPVMArchive(),
-	  FileReader<PVMError>(stream, size, owner)
+	  FileReader<PVM_ERROR>(stream, size, owner)
 {
 	header  = {};
 	entries = nullptr;
@@ -49,7 +49,7 @@ PVMReader::~PVMReader()
 	PVMReader::close();
 }
 
-PVMError PVMReader::get_header()
+PVM_ERROR PVMReader::get_header()
 {
 	if (!stream.is_open())
 	{
@@ -131,7 +131,7 @@ void PVMReader::check()
 
 void PVMReader::close()
 {
-	FileReader<PVMError>::close();
+	FileReader<PVM_ERROR>::close();
 	entries_.clear();
 }
 

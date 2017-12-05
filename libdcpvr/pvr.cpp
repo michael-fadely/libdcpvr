@@ -11,7 +11,7 @@ static constexpr uint32_t PVR_FOURCC  = 'TRVP'; // PVRT
 static constexpr uint32_t GBIX_FOURCC = 'XIBG'; // GBIX
 
 PVRReader::PVRReader(const std::string& path)
-	: IPVRTexture(), FileReader<PVR_ERROR>(path)
+	: FileReader<PVR_ERROR>(path)
 {
 	PVRReader::check();
 }
@@ -32,7 +32,7 @@ PVRReader::PVRReader(PVRReader&& other) noexcept
 }
 
 PVRReader::PVRReader(std::ifstream& stream, size_t size, bool owner)
-	: IPVRTexture(), FileReader<PVR_ERROR>(stream, size, owner)
+	: FileReader<PVR_ERROR>(stream, size, owner)
 {
 	PVRReader::check();
 }

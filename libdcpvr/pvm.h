@@ -3,10 +3,11 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include "pvr.h"
 #include "FileReader.h"
 
 // TODO: exceptions instead
-enum PVMError
+enum PVM_ERROR
 {
 	PVM_OK,
 	PVM_FILE_NOT_PVM,
@@ -16,7 +17,8 @@ enum PVMError
 	PVM_OUTPUT_NULL
 };
 
-enum PVMAttributes : uint16_t
+// TODO: the other 8 bits
+enum PVM_ATTR : uint16_t
 {
 	PVM_ATTR_GBIX       = 1u << 0u,
 	PVM_ATTR_DIMENSIONS = 1u << 1u,
@@ -27,15 +29,26 @@ enum PVMAttributes : uint16_t
 struct PVMHeader
 {
 	uint32_t data_offset;
-	uint16_t attributes;
+	PVM_ATTR attributes;
 	uint16_t entry_count;
 };
 
 struct PVMEntry
 {
 	uint16_t index;
-	char     name[28];
-	uint16_t format;
+	char name[28];
+
+	union
+	{
+		struct
+		{
+			PVR_PIXEL_FORMAT pixel_format;
+			PVR_DATA_FORMAT data_format;
+		};
+
+		uint16_t format;
+	};
+
 	uint16_t dimensions;
 	uint32_t gbix;
 };
@@ -46,7 +59,7 @@ struct IPVMArchive
 	PVMEntry* entries;
 };
 
-class PVMReader : public IPVMArchive, public FileReader<PVMError>
+class PVMReader : public IPVMArchive, public FileReader<PVM_ERROR>
 {
 	std::vector<PVMEntry> entries_;
 
@@ -61,5 +74,5 @@ public:
 
 private:
 	void check() override;
-	PVMError get_header();
+	PVM_ERROR get_header();
 };

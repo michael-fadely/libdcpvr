@@ -7,6 +7,7 @@ int main()
 	//ilInit();
 
 	{
+		printf("E_SAI.PVM:\n");
 		PVMReader pvm("E_SAI.PVM");
 
 		if (!pvm.is_open())
@@ -18,6 +19,24 @@ int main()
 		for (auto& i : pvm.get_entries())
 		{
 			cout << i.index << ": " << i.gbix << " - " << i.name << endl;
+		}
+	}
+
+	printf("\n");
+
+	{
+		printf("CASINO04.PVM:\n");
+		PVMReader pvm("CASINO04.PVM");
+
+		if (!pvm.is_open())
+		{
+			printf("CASINO04.PVM open failed.\n");
+			return -1;
+		}
+
+		for (auto& i : pvm.get_entries())
+		{
+			cout << i.index << ": " << i.gbix << " - " << i.name << " (format: " << i.format << ")" << endl;
 		}
 	}
 
