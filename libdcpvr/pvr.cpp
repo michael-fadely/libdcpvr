@@ -10,14 +10,24 @@
 static constexpr uint32_t PVR_FOURCC  = 'TRVP'; // PVRT
 static constexpr uint32_t GBIX_FOURCC = 'XIBG'; // GBIX
 
+PVRUnsupportedPixelFormat::PVRUnsupportedPixelFormat(uint8_t format)
+	: format_specifier(format)
+{
+}
+
+PVRUnsupportedDataFormat::PVRUnsupportedDataFormat(uint8_t format)
+	: format_specifier(format)
+{
+}
+
 PVRReader::PVRReader(const std::string& path)
-	: FileReader<PVR_ERROR>(path)
+	: FileReader(path)
 {
 	PVRReader::check();
 }
 
 PVRReader::PVRReader(PVRReader&& other) noexcept
-	: IPVRTexture(other), FileReader<PVR_ERROR>(std::move(other))
+	: IPVRTexture(other), FileReader(std::move(other))
 {
 	gbix_pos       = other.gbix_pos;
 	pvrt_pos       = other.pvrt_pos;
@@ -32,14 +42,14 @@ PVRReader::PVRReader(PVRReader&& other) noexcept
 }
 
 PVRReader::PVRReader(std::ifstream& stream, size_t size, bool owner)
-	: FileReader<PVR_ERROR>(stream, size, owner)
+	: FileReader(stream, size, owner)
 {
 	PVRReader::check();
 }
 
 PVRReader::~PVRReader()
 {
-	FileReader<PVR_ERROR>::close();
+	FileReader::close();
 }
 
 void PVRReader::build(std::ofstream& file)
@@ -110,11 +120,11 @@ void PVRReader::read_gbix()
 	read_t(stream, gbix);
 }
 
-PVR_ERROR PVRReader::get_header()
+void PVRReader::get_header()
 {
 	if (!stream.is_open())
 	{
-		return PVR_FILE_OPEN_FAIL;
+		throw PVRFileOpenFail();
 	}
 
 	const auto pos = stream.tellg();
@@ -146,7 +156,7 @@ PVR_ERROR PVRReader::get_header()
 		}
 		else
 		{
-			return PVR_FILE_NOT_PVR;
+			throw PVRFileNotPVR();
 		}
 	}
 
@@ -157,7 +167,7 @@ PVR_ERROR PVRReader::get_header()
 
 		if (fourcc != PVR_FOURCC)
 		{
-			return PVR_FILE_NOT_PVR;
+			throw PVRFileNotPVR();
 		}
 	}
 
@@ -168,7 +178,7 @@ PVR_ERROR PVRReader::get_header()
 	read_t(stream, width);
 	read_t(stream, height);
 
-	switch (static_cast<PVR_PIXEL_FORMAT>(pixel_format))
+	switch (pixel_format)
 	{
 		case PVR_PIXEL_FORMAT_ARGB1555:
 			has_alpha = true;
@@ -185,7 +195,7 @@ PVR_ERROR PVRReader::get_header()
 			break;
 
 		default:
-			return PVR_FORMAT_NOT_SUPPORTED;
+			throw PVRUnsupportedPixelFormat(pixel_format);
 	}
 
 	switch (static_cast<PVR_DATA_FORMAT>(data_format))
@@ -288,25 +298,15 @@ PVR_ERROR PVRReader::get_header()
 			break;
 
 		default:
-			return PVR_FORMAT_NOT_SUPPORTED;
+			throw PVRUnsupportedDataFormat(data_format);
 	}
 
 	data_pos = stream.tellg();
 	stream.seekg(pos);
-	return PVR_OK;
 }
 
 void PVRReader::check()
 {
-	const auto result = get_header();
-
-	if (result != PVR_OK)
-	{
-		error_ = result;
-		close();
-	}
-	else
-	{
-		is_open_ = true;
-	}
+	get_header();
+	is_open_ = true;
 }

@@ -5,23 +5,10 @@
 #include <fstream>
 #include "FileReader.h"
 
-// TODO: exceptions instead
-enum PVR_ERROR
-{
-	PVR_OK,
-	PVR_FILE_NOT_PVR,
-	PVR_FILE_OPEN_FAIL,
-	PVR_EARLY_EOF,
-	PVR_INPUT_NULL,
-	PVR_OUTPUT_NULL,
-	PVR_FORMAT_NOT_SUPPORTED
-};
-
-// TODO: exceptions instead
 enum PVR_DECODE
 {
-	PVR_DECODE_24BIT,
-	PVR_DECODE_32BIT,
+	PVR_DECODE_RGB,
+	PVR_DECODE_RGBA,
 };
 
 // PVR Pixel Formats
@@ -69,7 +56,29 @@ struct IPVRTexture
 	uint16_t         height       = 0;
 };
 
-class PVRReader : public IPVRTexture, public FileReader<PVR_ERROR>
+class PVRFileOpenFail : public std::exception
+{
+};
+
+class PVRFileNotPVR : public std::exception
+{
+};
+
+class PVRUnsupportedPixelFormat : public std::exception
+{
+public:
+	const uint8_t format_specifier;
+	explicit PVRUnsupportedPixelFormat(uint8_t format);
+};
+
+class PVRUnsupportedDataFormat : public std::exception
+{
+public:
+	const uint8_t format_specifier;
+	explicit PVRUnsupportedDataFormat(uint8_t format);
+};
+
+class PVRReader : public IPVRTexture, public FileReader
 {
 	pos_t gbix_pos;
 	pos_t pvrt_pos;
@@ -95,6 +104,6 @@ public:
 
 private:
 	void read_gbix();
-	PVR_ERROR get_header();
+	void get_header();
 	void check() override;
 };

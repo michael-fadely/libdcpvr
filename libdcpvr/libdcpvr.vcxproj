@@ -131,6 +131,7 @@
     <ClInclude Include="streamext.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FileReader.cpp" />
     <ClCompile Include="pvm.cpp" />
     <ClCompile Include="pvr.cpp" />
     <ClCompile Include="stdafx.cpp">

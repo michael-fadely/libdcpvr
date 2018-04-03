@@ -14,13 +14,12 @@
  * 0A .. 0B entry count
  */
 
-// ReSharper disable once CppDeclaratorNeverUsed
 static constexpr uint32_t MAX_GBIX   = 0xFFFFFFEF;
 static constexpr uint32_t PVM_FOURCC = 'HMVP';
 
 PVMReader::PVMReader(const std::string& path)
 	: IPVMArchive(),
-	  FileReader<PVM_ERROR>(path)
+	  FileReader(path)
 {
 	header  = {};
 	entries = nullptr;
@@ -29,7 +28,7 @@ PVMReader::PVMReader(const std::string& path)
 
 PVMReader::PVMReader(PVMReader&& other) noexcept
 	: IPVMArchive(other),
-	  FileReader<PVM_ERROR>(std::move(other))
+	  FileReader(std::move(other))
 {
 	entries_ = move(other.entries_);
 	entries  = entries_.data();
@@ -37,7 +36,7 @@ PVMReader::PVMReader(PVMReader&& other) noexcept
 
 PVMReader::PVMReader(std::ifstream& stream, size_t size, bool owner)
 	: IPVMArchive(),
-	  FileReader<PVM_ERROR>(stream, size, owner)
+	  FileReader(stream, size, owner)
 {
 	header  = {};
 	entries = nullptr;
@@ -49,11 +48,11 @@ PVMReader::~PVMReader()
 	PVMReader::close();
 }
 
-PVM_ERROR PVMReader::get_header()
+void PVMReader::get_header()
 {
 	if (!stream.is_open())
 	{
-		return PVM_FILE_OPEN_FAIL;
+		throw PVMFileOpenFail();
 	}
 
 	uint32_t fourcc = 0;
@@ -61,7 +60,7 @@ PVM_ERROR PVMReader::get_header()
 
 	if (fourcc != PVM_FOURCC)
 	{
-		return PVM_FILE_NOT_PVM;
+		throw FileNotPVM();
 	}
 
 	read_t(stream, header.data_offset);
@@ -107,31 +106,21 @@ PVM_ERROR PVMReader::get_header()
 
 	if (entries_.size() != header.entry_count)
 	{
-		return PVM_EARLY_EOF;
+		throw PVMEarlyEOF();
 	}
 
 	entries = entries_.data();
-	return PVM_OK;
 }
 
 void PVMReader::check()
 {
-	const auto result = get_header();
-
-	if (result != PVM_OK)
-	{
-		error_ = result;
-		close();
-	}
-	else
-	{
-		is_open_ = true;
-	}
+	get_header();
+	is_open_ = true;
 }
 
 void PVMReader::close()
 {
-	FileReader<PVM_ERROR>::close();
+	FileReader::close();
 	entries_.clear();
 }
 

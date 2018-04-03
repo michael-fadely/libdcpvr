@@ -6,17 +6,6 @@
 #include "pvr.h"
 #include "FileReader.h"
 
-// TODO: exceptions instead
-enum PVM_ERROR
-{
-	PVM_OK,
-	PVM_FILE_NOT_PVM,
-	PVM_FILE_OPEN_FAIL,
-	PVM_EARLY_EOF,
-	PVM_INPUT_NULL,
-	PVM_OUTPUT_NULL
-};
-
 // TODO: the other 8 bits
 enum PVM_ATTR : uint16_t
 {
@@ -59,7 +48,19 @@ struct IPVMArchive
 	PVMEntry* entries;
 };
 
-class PVMReader : public IPVMArchive, public FileReader<PVM_ERROR>
+class PVMFileOpenFail : public std::exception
+{
+};
+
+class FileNotPVM : public std::exception
+{
+};
+
+class PVMEarlyEOF : public std::exception
+{
+};
+
+class PVMReader : public IPVMArchive, public FileReader
 {
 	std::vector<PVMEntry> entries_;
 
@@ -74,5 +75,5 @@ public:
 
 private:
 	void check() override;
-	PVM_ERROR get_header();
+	void get_header();
 };
