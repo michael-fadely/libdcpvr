@@ -7,6 +7,32 @@
 #include "pvr.h"
 #include "streamext.h"
 
+#pragma pack(push, 1)
+union color32_argb
+{
+	uint32_t value;
+
+	struct
+	{
+		uint8_t b, g, r, a;
+	};
+};
+
+static_assert(sizeof(color32_argb) == sizeof(uint32_t), "nope");
+
+union color32_rgb
+{
+	uint32_t value;
+
+	struct
+	{
+		uint8_t b, g, r;
+	};
+};
+
+static_assert(sizeof(color32_rgb) == sizeof(uint32_t), "nope");
+#pragma pack(pop)
+
 static constexpr uint32_t PVR_FOURCC  = 'TRVP'; // PVRT
 static constexpr uint32_t GBIX_FOURCC = 'XIBG'; // GBIX
 
@@ -108,6 +134,49 @@ void PVRReader::write(std::ofstream& file)
 	}
 
 	stream.clear();
+}
+
+std::vector<uint8_t> PVRReader::decode()
+{
+	std::vector<uint8_t> result;
+
+	const size_t count = width * height;
+	result.reserve((has_alpha ? 4 : 3) * count);
+
+	// TODO: don't assume ARGB444 rectangle
+
+	auto buffer = new uint16_t[count];
+
+	stream.seekg(data_pos);
+	stream.read(reinterpret_cast<char*>(buffer), sizeof(uint16_t) * count);
+
+	for (size_t y = height; y; --y)
+	{
+		for (size_t x = 0; x < width; ++x)
+		{
+			uint16_t color = buffer[(width * (y - 1)) + x];
+
+			color32_argb c = {
+				(color & 0xFu) |
+				((color >> 4) & 0xFu) << 8 |
+				((color >> 8) & 0xFu) << 16 |
+				((color >> 12) & 0xFu) << 24
+			};
+
+			c.a = static_cast<uint8_t>(255.0f * (c.a / 15.0f));
+			c.r = static_cast<uint8_t>(255.0f * (c.r / 15.0f));
+			c.g = static_cast<uint8_t>(255.0f * (c.g / 15.0f));
+			c.b = static_cast<uint8_t>(255.0f * (c.b / 15.0f));
+
+			result.push_back(c.r);
+			result.push_back(c.g);
+			result.push_back(c.b);
+			result.push_back(c.a);
+		}
+	}
+
+	delete[] buffer;
+	return result;
 }
 
 void PVRReader::read_gbix()

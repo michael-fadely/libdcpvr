@@ -101,6 +101,7 @@ public:
 
 	void build(std::ofstream& file);
 	void write(std::ofstream& file);
+	std::vector<uint8_t> decode();
 
 private:
 	void read_gbix();

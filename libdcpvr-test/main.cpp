@@ -4,7 +4,7 @@ using namespace std;
 
 int main()
 {
-	//ilInit();
+	ilInit();
 
 	{
 		printf("E_SAI.PVM:\n");
@@ -49,6 +49,27 @@ int main()
 			return -2;
 		}
 
+		auto decoded = pvr.decode();
+
+		auto image = ilGenImage();
+		ilBindImage(image);
+
+		if (!ilTexImage(pvr.width, pvr.height, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, decoded.data()))
+		{
+			auto error = ilGetError();
+			throw;
+		}
+
+		ilEnable(IL_FILE_OVERWRITE);
+
+		if (!ilSave(IL_PNG, reinterpret_cast<wchar_t const*>("WINDY3_NBG2.png")))
+		{
+			auto error = ilGetError();
+			throw;
+		}
+
+		ilDeleteImage(image);
+
 		ofstream test_pvr("test_pvr.pvr", ios::binary);
 		pvr.write(test_pvr);
 	}
@@ -62,5 +83,6 @@ int main()
 		}
 	}
 
+	ilShutDown();
 	return 0;
 }
