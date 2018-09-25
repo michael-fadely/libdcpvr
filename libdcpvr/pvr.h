@@ -22,6 +22,7 @@ enum PVR_PIXEL_FORMAT : uint8_t
 	PVR_PIXEL_FORMAT_UNKNOWN  = 0xFF,
 };
 
+static_assert(sizeof(PVR_PIXEL_FORMAT) == sizeof(uint8_t));
 
 // Pvr Data Formats
 enum PVR_DATA_FORMAT : uint8_t
@@ -45,6 +46,8 @@ enum PVR_DATA_FORMAT : uint8_t
 	PVR_DATA_FORMAT_SMALLVQ_MM         = 0x11,
 	PVR_DATA_FORMAT_UNKNOWN            = 0xFF
 };
+
+static_assert(sizeof(PVR_DATA_FORMAT) == sizeof(uint8_t));
 
 struct IPVRTexture
 {
