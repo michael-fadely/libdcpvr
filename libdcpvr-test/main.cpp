@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-using namespace std;
-
 int main()
 {
 	ilInit();
@@ -18,7 +16,7 @@ int main()
 
 		for (auto& i : pvm.get_entries())
 		{
-			cout << i.index << ": " << i.gbix << " - " << i.name << endl;
+			std::cout << i.index << ": " << i.gbix << " - " << i.name << std::endl;
 		}
 	}
 
@@ -36,7 +34,7 @@ int main()
 
 		for (auto& i : pvm.get_entries())
 		{
-			cout << i.index << ": " << i.gbix << " - " << i.name << " (format: " << i.format << ")" << endl;
+			std::cout << i.index << ": " << i.gbix << " - " << i.name << " (format: " << i.format << ")" << std::endl;
 		}
 	}
 
@@ -62,7 +60,7 @@ int main()
 
 		ilEnable(IL_FILE_OVERWRITE);
 
-		if (!ilSave(IL_PNG, reinterpret_cast<wchar_t const*>("WINDY3_NBG2.png")))
+		if (!ilSave(IL_PNG, reinterpret_cast<wchar_t const*>("WINDY3_NBG2.png"))) // this looks bad, but this is a bug in devil
 		{
 			auto error = ilGetError();
 			throw;
@@ -70,7 +68,7 @@ int main()
 
 		ilDeleteImage(image);
 
-		ofstream test_pvr("test_pvr.pvr", ios::binary);
+		std::ofstream test_pvr("test_pvr.pvr", std::ios::binary);
 		pvr.write(test_pvr);
 	}
 
