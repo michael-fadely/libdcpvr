@@ -140,7 +140,7 @@ std::vector<uint8_t> PVRReader::decode()
 {
 	std::vector<uint8_t> result;
 
-	const size_t count = width * height;
+	const size_t count = static_cast<size_t>(width) * static_cast<size_t>(height);
 	result.reserve((has_alpha ? 4 : 3) * count);
 
 	// TODO: don't assume ARGB444 rectangle
@@ -163,10 +163,10 @@ std::vector<uint8_t> PVRReader::decode()
 				((color >> 12) & 0xFu) << 24
 			};
 
-			c.a = static_cast<uint8_t>(255.0f * (c.a / 15.0f));
-			c.r = static_cast<uint8_t>(255.0f * (c.r / 15.0f));
-			c.g = static_cast<uint8_t>(255.0f * (c.g / 15.0f));
-			c.b = static_cast<uint8_t>(255.0f * (c.b / 15.0f));
+			c.a = (c.a << 4) | c.a;
+			c.r = (c.r << 4) | c.r;
+			c.g = (c.g << 4) | c.g;
+			c.b = (c.b << 4) | c.b;
 
 			result.push_back(c.r);
 			result.push_back(c.g);
