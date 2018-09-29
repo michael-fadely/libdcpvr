@@ -53,7 +53,8 @@ PVRReader::PVRReader(const std::string& path)
 }
 
 PVRReader::PVRReader(PVRReader&& other) noexcept
-	: IPVRTexture(other), FileReader(std::move(other))
+	: IPVRTexture(other),
+	  FileReader(std::move(other))
 {
 	gbix_pos       = other.gbix_pos;
 	pvrt_pos       = other.pvrt_pos;
@@ -106,7 +107,7 @@ void PVRReader::build(std::ofstream& file)
 	while (!stream.eof() && (pos = stream.tellg()) < end)
 	{
 		const auto remainder = std::min(static_cast<size_t>(end - pos),
-			static_cast<size_t>(sizeof(buffer)));
+		                                static_cast<size_t>(sizeof(buffer)));
 
 		stream.read(buffer, remainder);
 		file.write(buffer, remainder);
@@ -127,7 +128,7 @@ void PVRReader::write(std::ofstream& file)
 	while (!stream.eof() && (pos = stream.tellg()) < end)
 	{
 		const auto remainder = std::min(static_cast<size_t>(end - pos),
-			static_cast<size_t>(sizeof(buffer)));
+		                                static_cast<size_t>(sizeof(buffer)));
 
 		stream.read(buffer, remainder);
 		file.write(buffer, remainder);
@@ -143,36 +144,121 @@ std::vector<uint8_t> PVRReader::decode()
 	const size_t count = static_cast<size_t>(width) * static_cast<size_t>(height);
 	result.reserve((has_alpha ? 4 : 3) * count);
 
-	// TODO: don't assume ARGB444 rectangle
+	// TODO: mip
+	// TODO: vq
+	// TODO: twiddle
+	// TODO: palette
 
 	auto buffer = new uint16_t[count];
 
 	stream.seekg(data_pos);
 	stream.read(reinterpret_cast<char*>(buffer), sizeof(uint16_t) * count);
 
-	for (size_t y = height; y; --y)
+	switch (pixel_format)
 	{
-		for (size_t x = 0; x < width; ++x)
+		case PVR_PIXEL_FORMAT_ARGB1555:
 		{
-			uint16_t color = buffer[(width * (y - 1)) + x];
+			for (size_t y = height; y; --y)
+			{
+				for (size_t x = 0; x < width; ++x)
+				{
+					uint16_t color = buffer[(width * (y - 1)) + x];
 
-			color32_argb c = {
-				(color & 0xFu) |
-				((color >> 4) & 0xFu) << 8 |
-				((color >> 8) & 0xFu) << 16 |
-				((color >> 12) & 0xFu) << 24
-			};
+					color32_argb c = {
+						(color & 0x1Fu) |
+						((color >> 5) & 0x1F) << 8 |
+						((color >> 10) & 0x1Fu) << 16
+					};
 
-			c.a = (c.a << 4) | c.a;
-			c.r = (c.r << 4) | c.r;
-			c.g = (c.g << 4) | c.g;
-			c.b = (c.b << 4) | c.b;
+					c.r = (c.r << 3) | (c.r & 7);
+					c.g = (c.g << 3) | (c.g & 7);
+					c.b = (c.b << 3) | (c.b & 7);
 
-			result.push_back(c.r);
-			result.push_back(c.g);
-			result.push_back(c.b);
-			result.push_back(c.a);
+					c.a = color < 0 ? 0 : 255;
+
+					if (c.a != 255)
+					{
+						printf("that's numberwang\n");
+					}
+
+					result.push_back(c.r);
+					result.push_back(c.g);
+					result.push_back(c.b);
+					result.push_back(c.a);
+				}
+			}
+
+			break;
 		}
+
+		case PVR_PIXEL_FORMAT_RGB565:
+		{
+			for (size_t y = height; y; --y)
+			{
+				for (size_t x = 0; x < width; ++x)
+				{
+					uint16_t color = buffer[(width * (y - 1)) + x];
+
+					color32_argb c = {
+						(color & 0x1Fu) |
+						((color >> 5) & 0x3Fu) << 8 |
+						((color >> 11) & 0x1Fu) << 16
+					};
+
+					c.r = (c.r << 3) | (c.r & 7);
+					c.g = (c.g << 2) | (c.g & 3);
+					c.b = (c.b << 3) | (c.b & 7);
+
+					result.push_back(c.r);
+					result.push_back(c.g);
+					result.push_back(c.b);
+				}
+			}
+
+			break;
+		}
+
+		case PVR_PIXEL_FORMAT_ARGB4444:
+		{
+			for (size_t y = height; y; --y)
+			{
+				for (size_t x = 0; x < width; ++x)
+				{
+					uint16_t color = buffer[(width * (y - 1)) + x];
+
+					color32_argb c = {
+						(color & 0xFu) |
+						((color >> 4) & 0xFu) << 8 |
+						((color >> 8) & 0xFu) << 16 |
+						((color >> 12) & 0xFu) << 24
+					};
+
+					c.a = (c.a << 4) | c.a;
+					c.r = (c.r << 4) | c.r;
+					c.g = (c.g << 4) | c.g;
+					c.b = (c.b << 4) | c.b;
+
+					result.push_back(c.r);
+					result.push_back(c.g);
+					result.push_back(c.b);
+					result.push_back(c.a);
+				}
+			}
+
+			break;
+		}
+
+		case PVR_PIXEL_FORMAT_YUV422:
+			break;
+
+		case PVR_PIXEL_FORMAT_BUMP:
+			break;
+
+		case PVR_PIXEL_FORMAT_UNKNOWN:
+			break;
+
+		default:
+			break;
 	}
 
 	delete[] buffer;
@@ -250,16 +336,11 @@ void PVRReader::get_header()
 	switch (pixel_format)
 	{
 		case PVR_PIXEL_FORMAT_ARGB1555:
-			has_alpha = true;
-			break;
-
-		case PVR_PIXEL_FORMAT_RGB565:
-			break;
-
 		case PVR_PIXEL_FORMAT_ARGB4444:
 			has_alpha = true;
 			break;
 
+		case PVR_PIXEL_FORMAT_RGB565:
 		case PVR_PIXEL_FORMAT_YUV422:
 			break;
 
