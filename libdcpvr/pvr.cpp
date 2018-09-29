@@ -33,6 +33,54 @@ union color32_rgb
 static_assert(sizeof(color32_rgb) == sizeof(uint32_t), "nope");
 #pragma pack(pop)
 
+inline color32_argb decode_565(uint16_t c)
+{
+	color32_argb color = {
+		 (c & 0x1Fu)                |
+		((c >>  5u) & 0x3Fu) << 8u  |
+		((c >> 11u) & 0x1Fu) << 16u
+	};
+
+	color.r = (color.r << 3u) | (color.r & 7u);
+	color.g = (color.g << 2u) | (color.g & 3u);
+	color.b = (color.b << 3u) | (color.b & 7u);
+
+	return color;
+}
+
+inline color32_argb decode_4444(uint16_t c)
+{
+	color32_argb color = {
+		 (c & 0xFu) |
+		((c >>  4u) & 0xFu) << 8u  |
+		((c >>  8u) & 0xFu) << 16u |
+		((c >> 12u) & 0xFu) << 24u
+	};
+
+	color.a = (color.a << 4u) | color.a;
+	color.r = (color.r << 4u) | color.r;
+	color.g = (color.g << 4u) | color.g;
+	color.b = (color.b << 4u) | color.b;
+
+	return color;
+}
+
+inline color32_argb decode_1555(uint16_t c)
+{
+	color32_argb color = {
+		 (c & 0x1Fu) |
+		((c >>  5u) & 0x1Fu) << 8u |
+		((c >> 10u) & 0x1Fu) << 16u
+	};
+
+	color.r = (color.r << 3u) | (color.r & 7u);
+	color.g = (color.g << 3u) | (color.g & 7u);
+	color.b = (color.b << 3u) | (color.b & 7u);
+	color.a = c < 0 ? 0 : 255;
+
+	return color;
+}
+
 static constexpr uint32_t PVR_FOURCC  = 'TRVP'; // PVRT
 static constexpr uint32_t GBIX_FOURCC = 'XIBG'; // GBIX
 
@@ -162,29 +210,11 @@ std::vector<uint8_t> PVRReader::decode()
 			{
 				for (size_t x = 0; x < width; ++x)
 				{
-					uint16_t color = buffer[(width * (y - 1)) + x];
-
-					color32_argb c = {
-						(color & 0x1Fu) |
-						((color >> 5) & 0x1F) << 8 |
-						((color >> 10) & 0x1Fu) << 16
-					};
-
-					c.r = (c.r << 3) | (c.r & 7);
-					c.g = (c.g << 3) | (c.g & 7);
-					c.b = (c.b << 3) | (c.b & 7);
-
-					c.a = color < 0 ? 0 : 255;
-
-					if (c.a != 255)
-					{
-						printf("that's numberwang\n");
-					}
-
-					result.push_back(c.r);
-					result.push_back(c.g);
-					result.push_back(c.b);
-					result.push_back(c.a);
+					color32_argb color = decode_1555(buffer[(width * (y - 1)) + x]);
+					result.push_back(color.r);
+					result.push_back(color.g);
+					result.push_back(color.b);
+					result.push_back(color.a);
 				}
 			}
 
@@ -197,21 +227,10 @@ std::vector<uint8_t> PVRReader::decode()
 			{
 				for (size_t x = 0; x < width; ++x)
 				{
-					uint16_t color = buffer[(width * (y - 1)) + x];
-
-					color32_argb c = {
-						(color & 0x1Fu) |
-						((color >> 5) & 0x3Fu) << 8 |
-						((color >> 11) & 0x1Fu) << 16
-					};
-
-					c.r = (c.r << 3) | (c.r & 7);
-					c.g = (c.g << 2) | (c.g & 3);
-					c.b = (c.b << 3) | (c.b & 7);
-
-					result.push_back(c.r);
-					result.push_back(c.g);
-					result.push_back(c.b);
+					color32_argb color = decode_565(buffer[(width * (y - 1)) + x]);
+					result.push_back(color.r);
+					result.push_back(color.g);
+					result.push_back(color.b);
 				}
 			}
 
@@ -224,24 +243,11 @@ std::vector<uint8_t> PVRReader::decode()
 			{
 				for (size_t x = 0; x < width; ++x)
 				{
-					uint16_t color = buffer[(width * (y - 1)) + x];
-
-					color32_argb c = {
-						(color & 0xFu) |
-						((color >> 4) & 0xFu) << 8 |
-						((color >> 8) & 0xFu) << 16 |
-						((color >> 12) & 0xFu) << 24
-					};
-
-					c.a = (c.a << 4) | c.a;
-					c.r = (c.r << 4) | c.r;
-					c.g = (c.g << 4) | c.g;
-					c.b = (c.b << 4) | c.b;
-
-					result.push_back(c.r);
-					result.push_back(c.g);
-					result.push_back(c.b);
-					result.push_back(c.a);
+					color32_argb color = decode_4444(buffer[(width * (y - 1)) + x]);
+					result.push_back(color.r);
+					result.push_back(color.g);
+					result.push_back(color.b);
+					result.push_back(color.a);
 				}
 			}
 
